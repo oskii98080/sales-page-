@@ -1,0 +1,6 @@
+{
+  "name": "Vantyx Patient Funnel",
+  "description": "An interactive 4-step walkthrough and conversion funnel for medical, aesthetic, and dental clinics to plug revenue leaks and book qualified patients on autopilot.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
