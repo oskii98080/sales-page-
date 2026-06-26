@@ -87,7 +87,7 @@ function MockLoomPlayer({
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -20 }}
             transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
-            className="w-full overflow-hidden mt-12 md:mt-16"
+            className="w-full overflow-hidden mt-6 md:mt-8"
           >
             {/* Solid matte deep card with responsive premium padding and border */}
             <div 

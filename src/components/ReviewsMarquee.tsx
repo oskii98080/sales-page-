@@ -82,7 +82,7 @@ function ReviewsMarquee() {
         <div>
           <div className="flex items-center gap-3 mb-3">
             <span className="w-2 h-8 bg-gold-500 rounded-full" />
-            <h2 className="text-3xl sm:text-4xl md:text-5xl font-black text-white tracking-tight font-display uppercase">
+            <h2 className="text-3xl sm:text-4xl md:text-5xl font-black text-white tracking-[-0.03em] font-display uppercase">
               WHAT OUR CLIENTS SAY
             </h2>
           </div>

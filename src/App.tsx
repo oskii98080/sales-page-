@@ -132,7 +132,7 @@ export default function App() {
     }
   }, [answers, allSubmissions, showToast]);
 
-  // Load submissions and progress from localStorage on mount
+  // Load submissions from localStorage on mount and guarantee top scroll alignment
   useEffect(() => {
     try {
       const stored = localStorage.getItem('vantyx_submissions');
@@ -143,16 +143,10 @@ export default function App() {
       console.error('Failed to load submissions', e);
     }
 
-    try {
-      const savedProgress = localStorage.getItem('vantyx_progress');
-      if (savedProgress) {
-        const parsed = JSON.parse(savedProgress);
-        if (parsed.step) setStep(parsed.step);
-        if (parsed.answers) setAnswers(parsed.answers);
-      }
-    } catch (e) {
-      console.error('Failed to load progress', e);
-    }
+    // Always start at step 1 on clean load/refresh
+    setStep(1);
+    setAnswers({ step1: '', step2: '', step3: '' });
+    window.scrollTo({ top: 0, left: 0, behavior: 'instant' as any });
   }, []);
 
   // Set page theme to black on mount
@@ -165,7 +159,7 @@ export default function App() {
 
   // Scroll to the very top of the page on step transition
   useEffect(() => {
-    window.scrollTo(0, 0);
+    window.scrollTo({ top: 0, left: 0, behavior: 'instant' as any });
   }, [step]);
 
   // Stabilized async navigation handler for a fluid, glitch-free state transition experience
@@ -320,7 +314,7 @@ export default function App() {
           <img 
             src="https://res.cloudinary.com/diwxs2xe8/image/upload/q_auto/f_auto/v1781975346/erasebg-transformed_ies8rk.png" 
             alt="Vantyx Logo" 
-            className="h-10 sm:h-20 md:h-26 lg:h-32 w-auto object-contain transition-all duration-300"
+            className="h-[120px] sm:h-[240px] md:h-[312px] lg:h-[384px] w-auto object-contain transition-all duration-300"
             referrerPolicy="no-referrer"
           />
         </div>
@@ -338,39 +332,6 @@ export default function App() {
         </div>
       </div>
 
-      {/* Segmented Progress Tracker with Scroll-Spy Integration */}
-      <div className="flex w-full max-w-md mx-auto mt-6 px-4 sm:px-8 justify-between gap-3 z-40 relative">
-        {[1, 2, 3, 4].map((s) => {
-          const isActive = s === step;
-          const isFilled = s < step;
-          
-          let fillWidth = '0%';
-          if (isFilled) fillWidth = '100%';
-          if (isActive) fillWidth = `${Math.min(100, Math.max(0, scrollPercent))}%`;
-
-          return (
-            <div 
-              key={s} 
-              className="flex-1 h-1.5 rounded-full bg-neutral-900/80 border border-neutral-900 overflow-hidden relative group cursor-pointer" 
-              onClick={() => {
-                if (s <= step || (s === 2 && answers.step1) || (s === 3 && answers.step2)) {
-                  setStep(s as StepNumber);
-                }
-              }}
-            >
-              <motion.div 
-                className={`absolute inset-y-0 left-0 bg-gradient-to-r ${
-                  isActive ? 'from-gold-500 to-amber-400' : 'from-gold-600 to-amber-500'
-                } rounded-full`}
-                style={{ width: fillWidth }}
-                transition={{ type: 'spring', stiffness: 120, damping: 20 }}
-              />
-              <div className="absolute inset-0 bg-white/0 hover:bg-white/5 transition-colors" title={`Step ${s}`} />
-            </div>
-          );
-        })}
-      </div>
-
       {/* 3. Main Hero / Form Layout Canvas (aligned to top for higher headings and reduced scroll requirement) */}
       <main className="flex-1 flex flex-col justify-start pt-6 pb-16 md:pt-10 md:pb-20 px-4 sm:px-8 md:px-14 relative overflow-hidden">
         
@@ -384,16 +345,12 @@ export default function App() {
             
             {/* ================= PAGE 1 ================= */}
             {step === 1 && (
-              <motion.div
+              <div
                 key="page1"
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -20 }}
-                transition={{ duration: 0.4 }}
-                className="space-y-6 md:space-y-10 text-center animate-fade-in"
+                className="space-y-6 md:space-y-10 text-center"
               >
                 {/* Main Headline */}
-                <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-extrabold tracking-tight text-white leading-[1.15] max-w-4xl mx-auto font-display">
+                <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold tracking-[-0.03em] text-white leading-[1.15] max-w-4xl mx-auto font-display">
                   Add <span className="text-gold-500 text-gold-glow">20+ qualified patients</span> to your calendar every month, on autopilot. You only pay when they book.
                 </h1>
 
@@ -418,21 +375,17 @@ export default function App() {
                 </div>
                 {/* Real-time horizontal clinic owner reviews marquee */}
                 <ReviewsMarquee />
-              </motion.div>
+              </div>
             )}
 
             {/* ================= PAGE 2 ================= */}
             {step === 2 && (
-              <motion.div
+              <div
                 key="page2"
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -20 }}
-                transition={{ duration: 0.4 }}
-                className="space-y-6 md:space-y-10 text-center animate-fade-in"
+                className="space-y-6 md:space-y-10 text-center"
               >
                 {/* Main Headline */}
-                <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-extrabold tracking-tight text-white leading-[1.15] max-w-4xl mx-auto font-display">
+                <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold tracking-[-0.03em] text-white leading-[1.15] max-w-4xl mx-auto font-display">
                   How we turn that leak into <span className="text-gold-500 text-gold-glow">20+ booked patients</span> a month, without you lifting a finger.
                 </h1>
 
@@ -457,58 +410,56 @@ export default function App() {
                 </div>
                 {/* Real-time horizontal clinic owner reviews marquee */}
                 <ReviewsMarquee />
-              </motion.div>
+              </div>
             )}
 
             {/* ================= PAGE 3 ================= */}
             {step === 3 && (
-              <motion.div
+              <div
                 key="page3"
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -20 }}
-                transition={{ duration: 0.4 }}
                 className="space-y-6 md:space-y-10 text-center animate-fade-in"
               >
                 {/* Main Headline */}
-                <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-extrabold tracking-tight text-white leading-[1.15] max-w-4xl mx-auto font-display">
+                <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold tracking-[-0.03em] text-white leading-[1.15] max-w-4xl mx-auto font-display">
                   Still have questions? Here's the <span className="text-gold-500 text-gold-glow">honest answer</span> to all of them.
                 </h1>
 
-                {/* Sub-headline - removed extra text under the questions header/tabs as requested, and loaded questions vertically */}
-                <ObjectionsTabs />
+                {/* Optimised dual-column grid for side-by-side presentation on desktop, stacked on mobile */}
+                <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12 items-start max-w-6xl mx-auto pt-6 pb-4">
+                  {/* Left Column: Objections/Questions */}
+                  <div className="lg:col-span-5 w-full">
+                    <ObjectionsTabs />
+                  </div>
 
-                {/* Video Component centered below objections */}
-                <div className="pt-10 pb-4">
-                  <MockLoomPlayer
-                    step={3}
-                    question="What is the main priority for your clinic over the next 30 days?"
-                    options={[
-                      "Scaling my patient numbers as fast as possible",
-                      "Saving administrative hours for my front-desk team",
-                      "Just curious to see what AI can do for us"
-                    ]}
-                    selectedAnswer={answers.step3}
-                    onAnswerSelect={handleAnswerSelect}
-                  />
+                  {/* Right Column: Loom Player and Quiz */}
+                  <div className="lg:col-span-7 w-full pt-4 lg:pt-0">
+                    <MockLoomPlayer
+                      step={3}
+                      question="What is the main priority for your clinic over the next 30 days?"
+                      options={[
+                        "Scaling my patient numbers as fast as possible",
+                        "Saving administrative hours for my front-desk team",
+                        "Just curious to see what AI can do for us"
+                      ]}
+                      selectedAnswer={answers.step3}
+                      onAnswerSelect={handleAnswerSelect}
+                    />
+                  </div>
                 </div>
+
                 {/* Real-time horizontal clinic owner reviews marquee */}
                 <ReviewsMarquee />
-              </motion.div>
+              </div>
             )}
 
             {/* ================= PAGE 4 ================= */}
             {step === 4 && (
-              <motion.div
+              <div
                 key="page4"
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -20 }}
-                transition={{ duration: 0.4 }}
-                className="space-y-6 md:space-y-10 text-center animate-fade-in"
+                className="space-y-6 md:space-y-10 text-center"
               >
                 {/* Main Headline */}
-                <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-extrabold tracking-tight text-white leading-[1.15] max-w-4xl mx-auto font-display">
+                <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold tracking-[-0.03em] text-white leading-[1.15] max-w-4xl mx-auto font-display">
                   You're one step from <span className="text-gold-500 text-gold-glow">20+ new patients</span> a month. Pick how you want to start.
                 </h1>
 
@@ -534,7 +485,7 @@ export default function App() {
 
                     <div className="space-y-5 relative z-10">
                       <div>
-                        <h3 className="text-2xl sm:text-3xl font-bold text-white font-display">Start today</h3>
+                        <h3 className="text-2xl sm:text-3xl font-bold tracking-[-0.02em] text-white font-display">Start today</h3>
                         <p className="text-4xl sm:text-5xl font-extrabold text-gold-500 mt-2 font-mono tracking-tight">
                           $247 <span className="text-[10px] sm:text-xs md:text-sm font-normal text-neutral-400">one-time setup</span>
                         </p>
@@ -599,7 +550,7 @@ export default function App() {
 
                     <div className="space-y-5">
                       <div>
-                        <h3 className="text-2xl sm:text-3xl font-bold text-white font-display">Book a free audit call</h3>
+                        <h3 className="text-2xl sm:text-3xl font-bold tracking-[-0.02em] text-white font-display">Book a free audit call</h3>
                         <p className="text-4xl sm:text-5xl font-extrabold text-white mt-2 font-mono tracking-tight">
                           Free <span className="text-[10px] sm:text-xs md:text-sm font-normal text-neutral-500">20-minute call</span>
                         </p>
@@ -661,7 +612,7 @@ export default function App() {
                   </div>
 
                 </div>
-              </motion.div>
+              </div>
             )}
 
           </AnimatePresence>
@@ -703,7 +654,7 @@ export default function App() {
                     <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full border border-gold-500/20 bg-gold-500/5 text-gold-400 text-[10px] font-mono tracking-wider uppercase mb-2">
                       {offerType === 'launch' ? 'IMMEDIATE DEPLOYMENT' : 'ZERO PRESSURE AUDIT'}
                     </div>
-                    <h2 className="text-xl md:text-2xl font-bold text-white tracking-tight font-display">
+                    <h2 className="text-xl md:text-2xl font-bold text-white tracking-[-0.02em] font-display">
                       {offerType === 'launch' 
                         ? "Secure Your Vantyx System Launch" 
                         : "Claim Your Free 20-Min Revenue Audit"
@@ -873,7 +824,7 @@ export default function App() {
                   </div>
 
                   <div className="space-y-2">
-                    <h2 className="text-xl md:text-2xl font-extrabold text-white tracking-tight font-display">
+                    <h2 className="text-xl md:text-2xl font-bold text-white tracking-[-0.02em] font-display">
                       {offerType === 'launch' ? 'Vantyx Setup Initialized!' : 'Free Audit Requested!'}
                     </h2>
                     <p className="text-xs text-neutral-400 max-w-sm mx-auto leading-relaxed">

@@ -33,29 +33,22 @@ function ObjectionsTabs() {
   };
 
   return (
-    <motion.div 
-      variants={containerVariants}
-      initial="hidden"
-      whileInView="visible"
-      viewport={{ once: true, margin: "-80px" }}
-      className="flex flex-col gap-4 max-w-3xl mx-auto text-left py-4"
-    >
+    <div className="flex flex-col gap-4 max-w-3xl mx-auto text-left py-4">
       {questions.map((q, idx) => (
-        <motion.div 
+        <div 
           key={idx}
-          variants={itemVariants}
           className="p-4 sm:p-6 md:p-7 rounded-2xl bg-[#0A0A0A] border border-neutral-900 shadow-xl flex items-center gap-3.5 sm:gap-5 hover:border-gold-500/20 transition-all duration-300"
         >
           {/* A beautiful numbered gold indicator */}
           <span className="w-8 h-8 sm:w-9 sm:h-9 rounded-xl bg-gold-500/10 border border-gold-500/20 flex items-center justify-center shrink-0 font-mono text-gold-500 text-xs sm:text-sm md:text-base font-extrabold">
             0{idx + 1}
           </span>
-          <h4 className="text-sm sm:text-base md:text-lg font-bold text-white tracking-tight font-display leading-snug">
+          <h4 className="text-sm sm:text-base md:text-lg font-bold text-white tracking-[-0.02em] font-display leading-snug">
             "{q}"
           </h4>
-        </motion.div>
+        </div>
       ))}
-    </motion.div>
+    </div>
   );
 }
 
