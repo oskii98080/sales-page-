@@ -1,4 +1,4 @@
-import { useState, FormEvent } from 'react';
+import { useState, FormEvent, memo } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { Calendar, Clock, CheckCircle2, ChevronRight, User, Mail, Phone, Building } from 'lucide-react';
 
@@ -6,7 +6,7 @@ interface CalendarWidgetProps {
   onSuccess: (details: { date: string; time: string; name: string; email: string; phone: string; clinicName: string }) => void;
 }
 
-export default function CalendarWidget({ onSuccess }: CalendarWidgetProps) {
+function CalendarWidget({ onSuccess }: CalendarWidgetProps) {
   const [selectedDate, setSelectedDate] = useState<number | null>(null);
   const [selectedTime, setSelectedTime] = useState<string | null>(null);
   const [name, setName] = useState('');
@@ -81,7 +81,7 @@ export default function CalendarWidget({ onSuccess }: CalendarWidgetProps) {
             </div>
 
             {/* 2. Days Slider */}
-            <div className="grid grid-cols-4 gap-3">
+            <div className="grid grid-cols-4 gap-2 sm:gap-3">
               {days.slice(0, 4).map((day, idx) => {
                 const isSelected = selectedDate === idx;
                 return (
@@ -243,3 +243,5 @@ export default function CalendarWidget({ onSuccess }: CalendarWidgetProps) {
     </div>
   );
 }
+
+export default memo(CalendarWidget);

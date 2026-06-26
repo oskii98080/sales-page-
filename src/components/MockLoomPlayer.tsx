@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, memo } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { Check } from 'lucide-react';
 
@@ -10,7 +10,7 @@ interface MockLoomPlayerProps {
   selectedAnswer: string | null;
 }
 
-export default function MockLoomPlayer({
+function MockLoomPlayer({
   step,
   question,
   options,
@@ -89,16 +89,17 @@ export default function MockLoomPlayer({
             transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
             className="w-full overflow-hidden mt-12 md:mt-16"
           >
-            {/* Solid matte deep card with high-contrast border and rich whitespace */}
+            {/* Solid matte deep card with responsive premium padding and border */}
             <div 
-              className="relative w-full p-10 md:p-14 rounded-3xl bg-[#121212] border border-neutral-800 shadow-2xl text-left"
+              className="relative w-full p-5 sm:p-10 md:p-14 rounded-3xl bg-[#121212] border border-neutral-800/80 shadow-2xl text-left"
             >
-              <h3 className="text-xl md:text-2xl font-bold text-white mb-8 tracking-tight leading-snug font-sans">
+              <h3 className="text-lg md:text-2xl font-bold text-white mb-6 md:mb-8 tracking-tight leading-snug font-sans">
                 {question}
               </h3>
 
               {/* Options List */}
-              <div className="space-y-4 md:space-y-5">
+              {/* Options List */}
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4.5 md:gap-6">
                 {options.map((option, idx) => {
                   const isSelected = selectedAnswer === option || localSelected === option;
                   const isHovered = hoveredOption === idx;
@@ -110,28 +111,28 @@ export default function MockLoomPlayer({
                       onClick={() => handleSelect(option)}
                       onMouseEnter={() => setHoveredOption(idx)}
                       onMouseLeave={() => setHoveredOption(null)}
-                      whileHover={{ scale: 1.01 }}
+                      whileHover={{ scale: 1.02 }}
                       transition={{ type: 'spring', stiffness: 400, damping: 25 }}
-                      className={`w-full text-base md:text-lg p-5 md:p-6 rounded-2xl border text-left flex items-center justify-between cursor-pointer transition-colors duration-200 ${
+                      className={`w-full rounded-2xl border text-left flex flex-col justify-between cursor-pointer transition-all duration-300 relative overflow-hidden min-h-[64px] md:min-h-[180px] p-4.5 md:p-6 ${
                         isSelected
-                          ? 'bg-[#0A0A0A] border-gold-500 text-white shadow-lg shadow-gold-500/5'
+                          ? 'bg-[#0E0E0E] border-gold-500 text-white shadow-lg shadow-gold-500/5'
                           : isHovered
-                          ? 'bg-[#0A0A0A] border-gold-500 text-white'
+                          ? 'bg-[#0E0E0E] border-gold-500/50 text-white'
                           : 'bg-[#0A0A0A] border-neutral-900 text-neutral-300 hover:border-neutral-800'
                       }`}
                     >
-                      <span className="flex items-center gap-5">
-                        <span className={`w-8 h-8 rounded-lg flex items-center justify-center font-mono text-sm border transition-colors ${
+                      <div className="flex flex-row md:flex-col items-center md:items-start gap-3.5 md:gap-5 w-full pr-8 md:pr-0">
+                        <span className={`w-8 h-8 rounded-lg flex items-center justify-center font-mono text-sm border transition-colors shrink-0 ${
                           isSelected 
                             ? 'bg-gold-500 text-black border-gold-500 font-bold' 
                             : 'bg-neutral-900 border-neutral-800 text-neutral-500'
                         }`}>
                           {String.fromCharCode(65 + idx)}
                         </span>
-                        <span className="font-semibold pr-2 leading-relaxed">{option}</span>
-                      </span>
+                        <span className="text-xs sm:text-sm md:text-base font-semibold leading-relaxed">{option}</span>
+                      </div>
 
-                      <div className="flex items-center justify-center w-6 h-6">
+                      <div className="absolute right-4.5 top-1/2 -translate-y-1/2 md:translate-y-0 md:top-auto md:bottom-6 flex items-center justify-center w-5 h-5 sm:w-6 sm:h-6 shrink-0">
                         <AnimatePresence>
                           {isSelected && (
                             <motion.div
@@ -140,7 +141,7 @@ export default function MockLoomPlayer({
                               exit={{ scale: 0, opacity: 0 }}
                               transition={{ type: 'spring', stiffness: 300, damping: 15 }}
                             >
-                              <Check className="w-6 h-6 text-gold-500 stroke-[3]" />
+                              <Check className="w-5 h-5 sm:w-6 sm:h-6 text-gold-500 stroke-[3]" />
                             </motion.div>
                           )}
                         </AnimatePresence>
@@ -156,3 +157,5 @@ export default function MockLoomPlayer({
     </div>
   );
 }
+
+export default memo(MockLoomPlayer);

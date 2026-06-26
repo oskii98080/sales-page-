@@ -1,4 +1,4 @@
-import { useState, useEffect, FormEvent } from 'react';
+import { useState, useEffect, useCallback, FormEvent } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { 
   ChevronLeft, 
@@ -16,7 +16,8 @@ import {
   ShieldCheck, 
   Info,
   Clock,
-  Briefcase
+  Briefcase,
+  RotateCcw
 } from 'lucide-react';
 import { StepNumber, QuizAnswers, LeadSubmission } from './types';
 import MockLoomPlayer from './components/MockLoomPlayer';
@@ -75,12 +76,12 @@ export default function App() {
   // Scroll Spy State
   const [scrollPercent, setScrollPercent] = useState(0);
 
-  const showToast = (msg: string) => {
+  const showToast = useCallback((msg: string) => {
     setToastMessage(null);
     setTimeout(() => {
       setToastMessage(msg);
     }, 50);
-  };
+  }, []);
 
   useEffect(() => {
     if (toastMessage) {
@@ -109,7 +110,7 @@ export default function App() {
     return () => window.removeEventListener('scroll', handleScroll);
   }, [step]); // Re-run when step changes to adjust for varying page lengths
 
-  const handleCalendarBookingSuccess = (details: { date: string; time: string; name: string; email: string; phone: string; clinicName: string }) => {
+  const handleCalendarBookingSuccess = useCallback((details: { date: string; time: string; name: string; email: string; phone: string; clinicName: string }) => {
     const newSubmission: LeadSubmission = {
       name: details.name,
       clinicName: details.clinicName,
@@ -129,7 +130,7 @@ export default function App() {
     } catch (e) {
       console.error('Failed to save submission', e);
     }
-  };
+  }, [answers, allSubmissions, showToast]);
 
   // Load submissions and progress from localStorage on mount
   useEffect(() => {
@@ -162,8 +163,13 @@ export default function App() {
     };
   }, []);
 
+  // Scroll to the very top of the page on step transition
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, [step]);
+
   // Stabilized async navigation handler for a fluid, glitch-free state transition experience
-  const handleAnswerSelect = async (option: string) => {
+  const handleAnswerSelect = useCallback(async (option: string) => {
     // 1. Update current step answer in state
     const currentStepKey = `step${step}` as keyof QuizAnswers;
     const nextAnswers = { ...answers, [currentStepKey]: option };
@@ -176,7 +182,6 @@ export default function App() {
       setTimeout(() => {
         try {
           localStorage.setItem('vantyx_progress', JSON.stringify({ step: nextStep, answers: nextAnswers }));
-          showToast('Progress automatically saved');
         } catch (e) {
           console.error('Failed to save progress', e);
         }
@@ -204,9 +209,9 @@ export default function App() {
     } else if (step === 3) {
       setStep(4);
     }
-  };
+  }, [step, answers]);
 
-  const handleBack = () => {
+  const handleBack = useCallback(() => {
     if (step > 1) {
       const prevStep = (step - 1) as StepNumber;
       setStep(prevStep);
@@ -217,7 +222,7 @@ export default function App() {
         console.error('Failed to save progress', e);
       }
     }
-  };
+  }, [step, answers, showToast]);
 
   const openFormModal = (type: 'launch' | 'audit') => {
     setOfferType(type);
@@ -267,7 +272,7 @@ export default function App() {
     }, 1200);
   };
 
-  const handleResetFlow = () => {
+  const handleResetFlow = useCallback(() => {
     setStep(1);
     setAnswers({ step1: '', step2: '', step3: '' });
     setIsSuccess(false);
@@ -278,7 +283,7 @@ export default function App() {
     } catch (e) {
       console.error('Failed to clear progress', e);
     }
-  };
+  }, [showToast]);
 
   // Content generators based on active step
   const progressPercent = step === 1 ? 25 : step === 2 ? 50 : step === 3 ? 75 : 100;
@@ -296,41 +301,45 @@ export default function App() {
         />
       </div>
 
-      {/* 2. Centered Logo Header with floating action buttons */}
-      <div className="w-full max-w-7xl mx-auto px-8 pt-8 md:pt-10 flex items-center justify-center relative z-40">
-        {step > 1 && (
-          <button 
-            id="back-button"
-            onClick={handleBack}
-            className="absolute left-8 p-3 rounded-xl border border-neutral-800 hover:border-neutral-700 bg-neutral-950/80 hover:bg-neutral-900 text-neutral-400 hover:text-white transition-all flex items-center justify-center cursor-pointer group"
-            title="Go back"
-          >
-            <ChevronLeft className="w-5.5 h-5.5 transition-transform group-hover:-translate-x-0.5" />
-          </button>
-        )}
+      {/* 2. Centered Logo Header with responsive layout to prevent collision */}
+      <div className="w-full max-w-7xl mx-auto px-4 sm:px-8 pt-6 md:pt-10 flex items-center justify-between gap-4 relative z-40">
+        <div className="w-16 flex justify-start">
+          {step > 1 && (
+            <button 
+              id="back-button"
+              onClick={handleBack}
+              className="flex p-2 sm:p-3 rounded-xl border border-neutral-800 hover:border-neutral-700 bg-neutral-950/80 hover:bg-neutral-900 text-neutral-400 hover:text-white transition-all items-center justify-center cursor-pointer group"
+              title="Go back"
+            >
+              <ChevronLeft className="w-5 h-5 sm:w-5.5 sm:h-5.5 transition-transform group-hover:-translate-x-0.5" />
+            </button>
+          )}
+        </div>
         
-        <div className="flex items-center">
+        <div className="flex-1 flex justify-center">
           <img 
             src="https://res.cloudinary.com/diwxs2xe8/image/upload/q_auto/f_auto/v1781975346/erasebg-transformed_ies8rk.png" 
             alt="Vantyx Logo" 
-            className="h-20 md:h-24 w-auto object-contain transition-all duration-300"
+            className="h-10 sm:h-20 md:h-26 lg:h-32 w-auto object-contain transition-all duration-300"
             referrerPolicy="no-referrer"
           />
         </div>
 
-        {(step > 1 || answers.step1) && (
-          <button
-            id="reset-flow"
-            onClick={handleResetFlow}
-            className="absolute right-8 text-xs border border-neutral-800 bg-neutral-900/30 hover:bg-neutral-900 text-neutral-400 hover:text-white px-4.5 py-2 rounded-full font-mono transition-colors"
-          >
-            Restart
-          </button>
-        )}
+        <div className="w-16 flex justify-end">
+          {(step > 1 || answers.step1) && (
+            <button
+              id="reset-flow"
+              onClick={handleResetFlow}
+              className="block text-[10px] sm:text-xs border border-neutral-800 bg-neutral-900/30 hover:bg-neutral-900 text-neutral-400 hover:text-white px-2.5 sm:px-4.5 py-1.5 sm:py-2 rounded-full font-mono transition-colors whitespace-nowrap"
+            >
+              Restart
+            </button>
+          )}
+        </div>
       </div>
 
       {/* Segmented Progress Tracker with Scroll-Spy Integration */}
-      <div className="w-full max-w-md mx-auto mt-6 px-8 flex justify-between gap-3 z-40 relative">
+      <div className="flex w-full max-w-md mx-auto mt-6 px-4 sm:px-8 justify-between gap-3 z-40 relative">
         {[1, 2, 3, 4].map((s) => {
           const isActive = s === step;
           const isFilled = s < step;
@@ -363,7 +372,7 @@ export default function App() {
       </div>
 
       {/* 3. Main Hero / Form Layout Canvas (aligned to top for higher headings and reduced scroll requirement) */}
-      <main className="flex-1 flex flex-col justify-start pt-6 pb-16 md:pt-10 md:pb-20 px-8 md:px-14 relative overflow-hidden">
+      <main className="flex-1 flex flex-col justify-start pt-6 pb-16 md:pt-10 md:pb-20 px-4 sm:px-8 md:px-14 relative overflow-hidden">
         
         {/* Subtle background glow graphics */}
         <div className="absolute top-1/4 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[500px] h-[500px] bg-gold-500/5 rounded-full blur-[120px] pointer-events-none" />
@@ -381,7 +390,7 @@ export default function App() {
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: -20 }}
                 transition={{ duration: 0.4 }}
-                className="space-y-8 md:space-y-10 text-center animate-fade-in"
+                className="space-y-6 md:space-y-10 text-center animate-fade-in"
               >
                 {/* Main Headline */}
                 <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-extrabold tracking-tight text-white leading-[1.15] max-w-4xl mx-auto font-display">
@@ -420,7 +429,7 @@ export default function App() {
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: -20 }}
                 transition={{ duration: 0.4 }}
-                className="space-y-8 md:space-y-10 text-center animate-fade-in"
+                className="space-y-6 md:space-y-10 text-center animate-fade-in"
               >
                 {/* Main Headline */}
                 <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-extrabold tracking-tight text-white leading-[1.15] max-w-4xl mx-auto font-display">
@@ -459,7 +468,7 @@ export default function App() {
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: -20 }}
                 transition={{ duration: 0.4 }}
-                className="space-y-8 md:space-y-10 text-center animate-fade-in"
+                className="space-y-6 md:space-y-10 text-center animate-fade-in"
               >
                 {/* Main Headline */}
                 <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-extrabold tracking-tight text-white leading-[1.15] max-w-4xl mx-auto font-display">
@@ -496,7 +505,7 @@ export default function App() {
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: -20 }}
                 transition={{ duration: 0.4 }}
-                className="space-y-8 md:space-y-10 text-center animate-fade-in"
+                className="space-y-6 md:space-y-10 text-center animate-fade-in"
               >
                 {/* Main Headline */}
                 <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-extrabold tracking-tight text-white leading-[1.15] max-w-4xl mx-auto font-display">
@@ -509,127 +518,127 @@ export default function App() {
                 </p>
 
                 {/* Interactive Split Columns Grid */}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-10 max-w-4xl mx-auto pt-6 pb-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 md:gap-10 max-w-4xl mx-auto pt-6 pb-4">
                   
                   {/* Column A: Immediate Action */}
-                  <div className="bg-[#0E0E0E] border-2 border-gold-500 rounded-3xl p-8 md:p-10 relative flex flex-col justify-between text-left shadow-[0_0_60px_rgba(255,215,0,0.15)] overflow-hidden group">
+                  <div className="bg-[#0E0E0E] border-2 border-gold-500 rounded-3xl p-5 sm:p-8 md:p-10 relative flex flex-col justify-between text-left shadow-[0_0_60px_rgba(255,215,0,0.15)] overflow-hidden group">
                     {/* Glowing radial background highlight */}
                     <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(255,215,0,0.08)_0%,transparent_70%)] pointer-events-none" />
                     
                     {/* Top Accent Badge */}
                     <div className="absolute top-0 right-8 translate-y-[-50%]">
-                      <span className="bg-gold-500 text-black text-xs font-black uppercase tracking-widest px-4 py-1.5 rounded-full shadow-lg">
+                      <span className="bg-gold-500 text-black text-[10px] sm:text-xs font-black uppercase tracking-widest px-3 sm:px-4 py-1.5 rounded-full shadow-lg">
                         MOST POPULAR
                       </span>
                     </div>
 
                     <div className="space-y-5 relative z-10">
                       <div>
-                        <h3 className="text-3xl font-bold text-white font-display">Start today</h3>
-                        <p className="text-5xl font-extrabold text-gold-500 mt-2 font-mono tracking-tight">
-                          $247 <span className="text-xs md:text-sm font-normal text-neutral-400">one-time setup</span>
+                        <h3 className="text-2xl sm:text-3xl font-bold text-white font-display">Start today</h3>
+                        <p className="text-4xl sm:text-5xl font-extrabold text-gold-500 mt-2 font-mono tracking-tight">
+                          $247 <span className="text-[10px] sm:text-xs md:text-sm font-normal text-neutral-400">one-time setup</span>
                         </p>
                       </div>
 
-                      <p className="text-sm md:text-base text-neutral-300">
+                      <p className="text-xs sm:text-sm md:text-base text-neutral-300">
                         Get your Vantyx System built and running in your clinic this week.
                       </p>
 
                       <div className="h-[1px] bg-neutral-800" />
 
                       {/* Value Bullets */}
-                      <ul className="space-y-4 text-sm md:text-base">
-                        <li className="flex items-start gap-3 text-neutral-200">
-                          <span className="w-6 h-6 rounded-full bg-gold-500/10 border border-gold-500/30 flex items-center justify-center shrink-0 mt-0.5">
-                            <Check className="w-3.5 h-3.5 text-gold-500" />
+                      <ul className="space-y-3 sm:space-y-4 text-xs sm:text-sm md:text-base">
+                        <li className="flex items-start gap-2.5 sm:gap-3 text-neutral-200">
+                          <span className="w-5 h-5 sm:w-6 sm:h-6 rounded-full bg-gold-500/10 border border-gold-500/30 flex items-center justify-center shrink-0 mt-0.5">
+                            <Check className="w-3 sm:w-3.5 sm:h-3.5 text-gold-500" />
                           </span>
                           <span><strong>Exclusive territory rights</strong> (we partner with only 1 clinic per local area)</span>
                         </li>
-                        <li className="flex items-start gap-3 text-neutral-200">
-                          <span className="w-6 h-6 rounded-full bg-gold-500/10 border border-gold-500/30 flex items-center justify-center shrink-0 mt-0.5">
-                            <Check className="w-3.5 h-3.5 text-gold-500" />
+                        <li className="flex items-start gap-2.5 sm:gap-3 text-neutral-200">
+                          <span className="w-5 h-5 sm:w-6 sm:h-6 rounded-full bg-gold-500/10 border border-gold-500/30 flex items-center justify-center shrink-0 mt-0.5">
+                            <Check className="w-3 sm:w-3.5 sm:h-3.5 text-gold-500" />
                           </span>
                           <span>Configured specifically for your clinic's niche</span>
                         </li>
-                        <li className="flex items-start gap-3 text-neutral-200">
-                          <span className="w-6 h-6 rounded-full bg-gold-500/10 border border-gold-500/30 flex items-center justify-center shrink-0 mt-0.5">
-                            <Check className="w-3.5 h-3.5 text-gold-500" />
+                        <li className="flex items-start gap-2.5 sm:gap-3 text-neutral-200">
+                          <span className="w-5 h-5 sm:w-6 sm:h-6 rounded-full bg-gold-500/10 border border-gold-500/30 flex items-center justify-center shrink-0 mt-0.5">
+                            <Check className="w-3 sm:w-3.5 sm:h-3.5 text-gold-500" />
                           </span>
                           <span><strong>Live within 24 hours</strong> with active booking enabled</span>
                         </li>
-                        <li className="flex items-start gap-3 text-neutral-200">
-                          <span className="w-6 h-6 rounded-full bg-gold-500/10 border border-gold-500/30 flex items-center justify-center shrink-0 mt-0.5">
-                            <Check className="w-3.5 h-3.5 text-gold-500" />
+                        <li className="flex items-start gap-2.5 sm:gap-3 text-neutral-200">
+                          <span className="w-5 h-5 sm:w-6 sm:h-6 rounded-full bg-gold-500/10 border border-gold-500/30 flex items-center justify-center shrink-0 mt-0.5">
+                            <Check className="w-3 sm:w-3.5 sm:h-3.5 text-gold-500" />
                           </span>
                           <span>No long-term contract, month-to-month after setup</span>
                         </li>
                       </ul>
                     </div>
 
-                    <div className="pt-8 relative z-10">
+                    <div className="pt-6 sm:pt-8 relative z-10">
                       <button
                         id="cta-start-today"
                         onClick={() => openFormModal('launch')}
-                        className="w-full bg-gold-500 hover:bg-gold-400 active:scale-[0.98] text-black font-extrabold text-sm uppercase tracking-widest py-4.5 rounded-xl transition-all duration-200 flex items-center justify-center gap-2.5 cursor-pointer shadow-[0_0_30px_rgba(255,215,0,0.4)]"
+                        className="w-full bg-gold-500 hover:bg-gold-400 active:scale-[0.98] text-black font-extrabold text-xs sm:text-sm uppercase tracking-widest py-3.5 sm:py-4.5 rounded-xl transition-all duration-200 flex items-center justify-center gap-2 sm:gap-2.5 cursor-pointer shadow-[0_0_30px_rgba(255,215,0,0.4)]"
                       >
                         <span>Get started for $247</span>
-                        <ArrowRight className="w-4.5 h-4.5" />
+                        <ArrowRight className="w-4 h-4 sm:w-4.5 sm:h-4.5" />
                       </button>
                     </div>
                   </div>
 
                   {/* Column B: Low-Risk Entry */}
-                  <div className="bg-neutral-900/40 border border-neutral-950 rounded-3xl p-8 md:p-10 flex flex-col justify-between text-left hover:border-neutral-800 transition-all duration-300 relative overflow-hidden group">
+                  <div className="bg-neutral-900/40 border border-neutral-950 rounded-3xl p-5 sm:p-8 md:p-10 flex flex-col justify-between text-left hover:border-neutral-800 transition-all duration-300 relative overflow-hidden group">
                     
                     {/* Top Accent Badge */}
                     <div className="absolute top-0 right-8 translate-y-[-50%]">
-                      <span className="bg-neutral-850 border border-neutral-800 text-neutral-400 text-xs font-bold uppercase tracking-widest px-4 py-1.5 rounded-full">
+                      <span className="bg-neutral-850 border border-neutral-800 text-neutral-400 text-[10px] sm:text-xs font-bold uppercase tracking-widest px-3 sm:px-4 py-1.5 rounded-full">
                         NO PRESSURE
                       </span>
                     </div>
 
                     <div className="space-y-5">
                       <div>
-                        <h3 className="text-3xl font-bold text-white font-display">Book a free audit call</h3>
-                        <p className="text-5xl font-extrabold text-white mt-2 font-mono tracking-tight">
-                          Free <span className="text-xs md:text-sm font-normal text-neutral-500">20-minute call</span>
+                        <h3 className="text-2xl sm:text-3xl font-bold text-white font-display">Book a free audit call</h3>
+                        <p className="text-4xl sm:text-5xl font-extrabold text-white mt-2 font-mono tracking-tight">
+                          Free <span className="text-[10px] sm:text-xs md:text-sm font-normal text-neutral-500">20-minute call</span>
                         </p>
                       </div>
 
-                      <p className="text-sm md:text-base text-neutral-400">
+                      <p className="text-xs sm:text-sm md:text-base text-neutral-400">
                         Not ready to commit? Let's look at your clinic's specific numbers together and see exactly where the leaks are.
                       </p>
 
                       <div className="h-[1px] bg-neutral-800" />
 
                       {/* Value Bullets */}
-                      <ul className="space-y-4 text-sm md:text-base">
-                        <li className="flex items-start gap-3 text-neutral-400">
-                          <span className="w-6 h-6 rounded-full bg-neutral-900 border border-neutral-800 flex items-center justify-center shrink-0 mt-0.5">
-                            <Check className="w-3.5 h-3.5 text-neutral-400" />
+                      <ul className="space-y-3 sm:space-y-4 text-xs sm:text-sm md:text-base">
+                        <li className="flex items-start gap-2.5 sm:gap-3 text-neutral-400">
+                          <span className="w-5 h-5 sm:w-6 sm:h-6 rounded-full bg-neutral-900 border border-neutral-800 flex items-center justify-center shrink-0 mt-0.5">
+                            <Check className="w-3 sm:w-3.5 sm:h-3.5 text-neutral-400" />
                           </span>
                           <span><strong className="text-neutral-300">20-minute call</strong>, zero sales pressure</span>
                         </li>
-                        <li className="flex items-start gap-3 text-neutral-400">
-                          <span className="w-6 h-6 rounded-full bg-neutral-900 border border-neutral-800 flex items-center justify-center shrink-0 mt-0.5">
-                            <Check className="w-3.5 h-3.5 text-neutral-400" />
+                        <li className="flex items-start gap-2.5 sm:gap-3 text-neutral-400">
+                          <span className="w-5 h-5 sm:w-6 sm:h-6 rounded-full bg-neutral-900 border border-neutral-800 flex items-center justify-center shrink-0 mt-0.5">
+                            <Check className="w-3 sm:w-3.5 sm:h-3.5 text-neutral-400" />
                           </span>
                           <span>We'll map out your clinic's customized revenue leak estimate</span>
                         </li>
-                        <li className="flex items-start gap-3 text-neutral-400">
-                          <span className="w-6 h-6 rounded-full bg-neutral-900 border border-neutral-800 flex items-center justify-center shrink-0 mt-0.5">
-                            <Check className="w-3.5 h-3.5 text-neutral-400" />
+                        <li className="flex items-start gap-2.5 sm:gap-3 text-neutral-400">
+                          <span className="w-5 h-5 sm:w-6 sm:h-6 rounded-full bg-neutral-900 border border-neutral-800 flex items-center justify-center shrink-0 mt-0.5">
+                            <Check className="w-3 sm:w-3.5 sm:h-3.5 text-neutral-400" />
                           </span>
                           <span>You decide afterward if you want us to build it, no obligation</span>
                         </li>
                       </ul>
                     </div>
 
-                    <div className="pt-8">
+                    <div className="pt-6 sm:pt-8">
                       <button
                         id="cta-book-audit"
                         onClick={() => setShowCalendar(!showCalendar)}
-                        className="w-full bg-neutral-900 hover:bg-neutral-800 active:scale-[0.98] text-white font-bold text-sm uppercase tracking-widest py-4.5 rounded-xl transition-all duration-200 flex items-center justify-center gap-2.5 cursor-pointer border border-neutral-800"
+                        className="w-full bg-neutral-900 hover:bg-neutral-800 active:scale-[0.98] text-white font-bold text-xs sm:text-sm uppercase tracking-widest py-3.5 sm:py-4.5 rounded-xl transition-all duration-200 flex items-center justify-center gap-2 sm:gap-2.5 cursor-pointer border border-neutral-800"
                       >
                         <span>{showCalendar ? '▲ Close calendar' : '📅 Book my free audit call'}</span>
                       </button>
@@ -667,13 +676,13 @@ export default function App() {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 bg-neutral-950/90 backdrop-blur-md z-50 flex items-center justify-center p-4 overflow-y-auto"
+            className="fixed inset-0 bg-neutral-950/90 backdrop-blur-md z-50 overflow-y-auto flex justify-center items-start sm:items-center p-3 sm:p-4 py-8 sm:py-4"
           >
             <motion.div
               initial={{ scale: 0.95, y: 15 }}
               animate={{ scale: 1, y: 0 }}
               exit={{ scale: 0.95, y: 15 }}
-              className="bg-neutral-900 border border-neutral-800 w-full max-w-lg rounded-3xl p-6 md:p-8 relative shadow-2xl"
+              className="bg-neutral-900 border border-neutral-800 w-full max-w-lg rounded-3xl p-5 sm:p-6 md:p-8 relative shadow-2xl my-auto"
               onClick={(e) => e.stopPropagation()}
             >
               {/* Close Button */}
@@ -922,6 +931,8 @@ export default function App() {
           </motion.div>
         )}
       </AnimatePresence>
+
+
 
       {/* 5. Minimal footer */}
       <footer className="py-6 border-t border-neutral-900/60 text-center text-xs text-neutral-500 font-mono select-none">
